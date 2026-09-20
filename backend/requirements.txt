@@ -1,0 +1,23 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+sqlalchemy==2.0.35
+python-multipart==0.0.12
+python-dotenv==1.0.1
+
+# RAG / AI layer
+langchain==0.3.4
+langchain-google-genai==2.0.4
+google-generativeai==0.8.3
+langchain-community==0.3.3
+langchain-chroma==0.1.4
+chromadb==0.5.15
+httpx==0.27.2
+
+# PDF processing
+pypdf==5.0.1
+pdfplumber==0.11.4
+
+# Utilities
+tenacity==9.0.0
