@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 
 from app.core.vectorstore import get_or_create_collection
-from app.services.embedding_service import get_embeddings_client
+from app.services.embedding_service import embed_query
 
 
 @dataclass
@@ -26,8 +26,7 @@ def retrieve_relevant_chunks(
     If document_id is provided, results are restricted to that document only
     (used when the user is asking about one specific uploaded file).
     """
-    embeddings_client = get_embeddings_client()
-    query_vector = embeddings_client.embed_query(query)
+    query_vector = embed_query(query)
 
     collection = get_or_create_collection()
 

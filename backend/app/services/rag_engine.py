@@ -1,7 +1,7 @@
-"""RAG answer generation: combines retrieval with Gemini chat generation."""
+"""RAG answer generation: combines retrieval with Groq chat generation."""
 from dataclasses import dataclass
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from groq import Groq
 
 from app.core.config import get_settings
 from app.services.retrieval_service import RetrievedChunk, retrieve_relevant_chunks
@@ -16,7 +16,7 @@ strictly using the provided lecture material excerpts below. Follow these rules:
 say so clearly instead of guessing.
 3. When you state a fact, mention which source it came from, referring to it \
 by its filename and page number, in the style: "According to Slide 3 of \
-{{filename}}...".
+{filename}...".
 4. Keep answers concise and focused on what was actually asked.
 
 Excerpts:
@@ -52,13 +52,25 @@ def _build_context(chunks: list[RetrievedChunk]) -> str:
     return "\n\n".join(blocks)
 
 
-def get_chat_client() -> ChatGoogleGenerativeAI:
-    """Return a configured Gemini chat client."""
-    return ChatGoogleGenerativeAI(
-        model=settings.gemini_chat_model,
-        google_api_key=settings.google_api_key,
+def get_groq_client() -> Groq:
+    """Return a configured Groq API client."""
+    return Groq(api_key=settings.groq_api_key)
+
+
+def generate_text(prompt: str, system_instruction: str | None = None) -> str:
+    """Generate text from Groq given a prompt and optional system instruction."""
+    client = get_groq_client()
+    messages = []
+    if system_instruction:
+        messages.append({"role": "system", "content": system_instruction})
+    messages.append({"role": "user", "content": prompt})
+
+    response = client.chat.completions.create(
+        model=settings.groq_chat_model,
+        messages=messages,
         temperature=0.2,
     )
+    return response.choices[0].message.content
 
 
 def answer_question(query: str, document_id: str | None = None, top_k: int = 5) -> RagAnswer:
@@ -75,15 +87,9 @@ def answer_question(query: str, document_id: str | None = None, top_k: int = 5) 
         )
 
     context = _build_context(chunks)
-    prompt = SYSTEM_PROMPT.format(context=context)
+    system_instruction = SYSTEM_PROMPT.format(context=context, filename="")
 
-    chat_client = get_chat_client()
-    response = chat_client.invoke(
-        [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": query},
-        ]
-    )
+    answer_text = generate_text(prompt=query, system_instruction=system_instruction)
 
     citations = [
         Citation(
@@ -94,4 +100,4 @@ def answer_question(query: str, document_id: str | None = None, top_k: int = 5) 
         for chunk in chunks
     ]
 
-    return RagAnswer(answer=response.content, citations=citations)
+    return RagAnswer(answer=answer_text, citations=citations)

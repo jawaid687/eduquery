@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.db import Base, engine
-from app.routers import chat, documents
+from app.routers import chat, documents, study
+
 settings = get_settings()
 
 
@@ -31,8 +32,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 app.include_router(documents.router)
 app.include_router(chat.router)
+app.include_router(study.router)
+
 
 @app.get("/health", tags=["system"])
 def health_check() -> dict[str, str]:

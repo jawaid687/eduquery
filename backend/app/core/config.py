@@ -20,11 +20,12 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     debug: bool = False
 
+       # Groq (chat) + local embeddings
+    groq_api_key: str = ""
+    groq_chat_model: str = "openai/gpt-oss-120b"
+    embedding_model_name: str = "all-MiniLM-L6-v2"
 
-     # Google Gemini
-    google_api_key: str = ""
-    gemini_chat_model: str = "models/gemini-2.5-flash"
-        gemini_embedding_model: str = "models/gemini-embedding-001"
+    # Database
     database_url: str = "sqlite:///./eduquery.db"
 
     # Vector store
