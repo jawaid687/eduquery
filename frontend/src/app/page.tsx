@@ -24,7 +24,9 @@ export default function Home() {
         </p>
       )}
       {error && <p className="text-red-600">{error}</p>}
-      {!health && !error && <p className="text-gray-500">Connecting to backend...</p>}
+      {!health && !error && (
+        <p className="text-gray-500">Connecting to backend...</p>
+      )}
     </main>
   );
 }
