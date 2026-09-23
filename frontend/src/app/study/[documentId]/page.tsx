@@ -3,29 +3,61 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { FlashcardGenerator } from "@/components/features/study/flashcard-generator";
-import { askQuestion, getDocument } from "@/lib/api-client";
-import type { ChatMessage, Document } from "@/types";
+import {
+  askQuestion,
+  getDocument,
+} from "@/lib/api-client";
+
+import {
+  FlashcardGenerator,
+} from "@/components/features/study/flashcard-generator";
+
+import {
+  QuizGenerator,
+} from "@/components/features/study/quiz-generator";
+
+import type {
+  ChatMessage,
+  Document,
+} from "@/types";
+
+
+type Tab =
+  | "pdf"
+  | "chat"
+  | "flashcards"
+  | "quiz";
 
 
 export default function StudyPage() {
 
+
   const params = useParams();
 
-  const documentId = params.documentId as string;
+  const documentId =
+    params.documentId as string;
 
 
-  const [document, setDocument] =
+
+  const [activeTab,setActiveTab] =
+    useState<Tab>("pdf");
+
+
+  const [document,setDocument] =
     useState<Document | null>(null);
 
-  const [question, setQuestion] =
+
+  const [question,setQuestion] =
     useState("");
 
-  const [messages, setMessages] =
+
+  const [messages,setMessages] =
     useState<ChatMessage[]>([]);
 
-  const [loading, setLoading] =
+
+  const [loading,setLoading] =
     useState(false);
+
 
 
   const chatEndRef =
@@ -33,53 +65,54 @@ export default function StudyPage() {
 
 
 
-  useEffect(() => {
+  useEffect(()=>{
 
-    if (!documentId) return;
+    if(!documentId) return;
 
 
     getDocument(documentId)
       .then(setDocument)
-      .catch(() => {
-        setDocument(null);
-      });
+      .catch(()=>setDocument(null));
 
 
-  }, [documentId]);
+  },[documentId]);
 
 
 
 
 
-  useEffect(() => {
+  useEffect(()=>{
 
     chatEndRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior:"smooth",
     });
 
-  }, [messages]);
+  },[messages]);
 
 
 
 
 
-
-  const handleAsk = async () => {
-
-    if (!question.trim() || loading) return;
+  const handleAsk = async()=>{
 
 
-    const userText = question;
+    if(!question.trim() || loading)
+      return;
 
 
-    setMessages((prev) => [
+
+    const text = question;
+
+
+    setMessages(prev=>[
       ...prev,
       {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: userText,
+        id:crypto.randomUUID(),
+        role:"user",
+        content:text,
       },
     ]);
+
 
 
     setQuestion("");
@@ -88,44 +121,44 @@ export default function StudyPage() {
 
 
 
-    try {
+    try{
+
 
       const response =
         await askQuestion(
-          userText,
-          documentId,
+          text,
+          documentId
         );
 
 
-
-      setMessages((prev) => [
+      setMessages(prev=>[
         ...prev,
         {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: response.answer,
-          citations: response.citations,
+          id:crypto.randomUUID(),
+          role:"assistant",
+          content:response.answer,
+          citations:response.citations,
         },
       ]);
 
 
 
-    } catch {
+    }catch{
 
 
-      setMessages((prev) => [
+      setMessages(prev=>[
         ...prev,
         {
-          id: crypto.randomUUID(),
-          role: "assistant",
+          id:crypto.randomUUID(),
+          role:"assistant",
           content:
-            "Sorry, I could not generate an answer.",
+          "Sorry, I could not answer.",
         },
       ]);
 
 
-
-    } finally {
+    }
+    finally{
 
       setLoading(false);
 
@@ -137,292 +170,315 @@ export default function StudyPage() {
 
 
 
+  const tabs = [
+    {
+      id:"pdf",
+      label:"📄 PDF",
+    },
+    {
+      id:"chat",
+      label:"💬 AI Chat",
+    },
+    {
+      id:"flashcards",
+      label:"🧠 Flashcards",
+    },
+    {
+      id:"quiz",
+      label:"🎯 Quiz",
+    },
+  ] as const;
 
-  return (
 
-    <main className="min-h-screen bg-background p-6">
 
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-4">
 
+return (
 
+<main className="min-h-screen bg-background p-6">
 
-        <header>
 
-          <h1 className="text-2xl font-bold">
+<div className="mx-auto max-w-7xl space-y-5">
 
-            {document?.filename ?? "Loading..."}
 
-          </h1>
 
+<header>
 
+<h1 className="text-2xl font-bold">
 
-          {document && (
+{document?.filename ?? "Loading..."}
 
-            <p className="text-sm text-muted-foreground">
+</h1>
 
-              {document.page_count} pages
 
-            </p>
+{document && (
 
-          )}
+<p className="text-sm text-muted-foreground">
 
-        </header>
+{document.page_count} pages
 
+</p>
 
+)}
 
+</header>
 
 
 
-        <div className="grid h-[850px] grid-cols-2 gap-4">
 
 
+<div className="
+flex
+gap-2
+rounded-xl
+border
+p-2
+">
 
+{tabs.map(tab=>(
 
+<button
 
-          {/* PDF VIEWER */}
+key={tab.id}
 
-          <section className="overflow-hidden rounded-lg border">
+onClick={()=>
+setActiveTab(tab.id)
+}
 
-            <iframe
+className={
 
-              src={
-                `http://localhost:8000/api/v1/documents/${documentId}/file`
-              }
+activeTab===tab.id
 
-              className="h-full w-full"
+?
 
-              title="PDF Viewer"
+"rounded-lg bg-primary px-4 py-2 text-primary-foreground"
 
-            />
+:
 
-          </section>
+"rounded-lg px-4 py-2 hover:bg-muted"
 
+}
 
+>
 
+{tab.label}
 
+</button>
 
+))}
 
 
-          {/* CHAT + FLASHCARDS */}
+</div>
 
-          <section className="flex flex-col rounded-lg border">
 
 
 
-            {/* CHAT AREA */}
 
-            <div className="flex-1 space-y-4 overflow-y-auto p-4">
 
 
+<div className="
+rounded-xl
+border
+min-h-[750px]
+p-4
+">
 
-              {messages.length === 0 && (
 
-                <p className="text-sm text-muted-foreground">
 
-                  Ask anything about your lecture material.
 
-                </p>
 
-              )}
 
+{activeTab==="pdf" && (
 
+<iframe
 
+src={
+`http://localhost:8000/api/v1/documents/${documentId}/file`
+}
 
+className="
+h-[720px]
+w-full
+rounded-lg
+"
 
+title="PDF"
 
-              {messages.map((message) => (
+/>
 
-                <div
+)}
 
-                  key={message.id}
 
-                  className={
-                    message.role === "user"
-                      ? "ml-auto max-w-[90%] rounded-lg bg-primary p-3 text-primary-foreground"
-                      : "max-w-[90%] rounded-lg bg-muted p-3"
-                  }
 
-                >
 
 
 
-                  <p className="text-sm font-semibold">
 
-                    {message.role === "user"
-                      ? "You"
-                      : "EduQuery"}
+{activeTab==="chat" && (
 
-                  </p>
+<div className="
+flex
+h-[720px]
+flex-col
+">
 
+<div className="
+flex-1
+overflow-y-auto
+space-y-4
+p-4
+">
 
 
+{messages.map(message=>(
 
+<div
 
-                  <p className="mt-2 whitespace-pre-wrap text-sm">
+key={message.id}
 
-                    {message.content}
+className={
+message.role==="user"
 
-                  </p>
+?
+"ml-auto max-w-[80%] rounded-xl bg-primary p-3 text-primary-foreground"
 
+:
 
+"max-w-[80%] rounded-xl bg-muted p-3"
 
+}
 
+>
 
-                  {message.citations &&
-                    message.citations.length > 0 && (
+<p className="font-semibold">
 
-                    <div className="mt-3 border-t pt-2 text-xs">
+{
+message.role==="user"
+?
+"You"
+:
+"EduQuery"
+}
 
+</p>
 
-                      <p className="font-semibold">
 
-                        Sources
+<p className="mt-2 whitespace-pre-wrap">
 
-                      </p>
+{message.content}
 
+</p>
 
+</div>
 
-                      {message.citations.map(
-                        (citation, index) => (
+))}
 
-                          <p key={index}>
 
-                            📄 {citation.filename}
-                            {" — "}
-                            Page {citation.page_number}
+<div ref={chatEndRef}/>
 
-                          </p>
+</div>
 
-                        ),
-                      )}
 
 
-                    </div>
 
-                  )}
 
+<div className="flex gap-2 border-t p-4">
 
 
-                </div>
+<input
 
-              ))}
+className="
+flex-1
+rounded-lg
+border
+px-3
+"
 
+placeholder="Ask about your lecture..."
 
+value={question}
 
+onChange={
+e=>setQuestion(e.target.value)
+}
 
+onKeyDown={
+e=>{
+if(e.key==="Enter")
+handleAsk();
+}
+}
 
+/>
 
-              {loading && (
 
-                <p className="text-sm text-muted-foreground">
 
-                  Thinking...
+<button
 
-                </p>
+onClick={handleAsk}
 
-              )}
+className="
+rounded-lg
+bg-primary
+px-5
+text-primary-foreground
+"
 
+>
 
+Ask
 
+</button>
 
 
-              <div ref={chatEndRef} />
+</div>
 
-            </div>
 
 
+</div>
 
+)}
 
 
 
 
 
-            {/* CHAT INPUT */}
 
-            <div className="flex gap-2 border-t p-4">
 
+{activeTab==="flashcards" && (
 
+<FlashcardGenerator
+documentId={documentId}
+/>
 
-              <input
+)}
 
-                className="flex-1 rounded-md border px-3 py-2"
 
-                placeholder="Ask about your lecture..."
 
-                value={question}
 
-                onChange={(e) =>
-                  setQuestion(e.target.value)
-                }
 
-                onKeyDown={(e) => {
 
-                  if (e.key === "Enter") {
+{activeTab==="quiz" && (
 
-                    handleAsk();
+<QuizGenerator
+documentId={documentId}
+/>
 
-                  }
+)}
 
-                }}
 
-              />
 
 
 
+</div>
 
-              <button
 
-                className="rounded-md bg-primary px-5 text-primary-foreground"
 
-                onClick={handleAsk}
+</div>
 
-                disabled={loading}
 
-              >
+</main>
 
-                {loading ? "..." : "Ask"}
-
-              </button>
-
-
-
-            </div>
-
-
-
-
-
-
-
-            {/* FLASHCARD SECTION */}
-
-            <FlashcardGenerator
-              documentId={documentId}
-            />
-
-
-
-          </section>
-
-
-
-
-
-        </div>
-
-
-
-
-
-      </div>
-
-
-
-
-
-    </main>
-
-  );
+);
 
 }
